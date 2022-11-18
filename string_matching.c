@@ -40,7 +40,6 @@ void get_file_contents(char* argv[])
     // replace trailing '\n' with '\0'
     text[strlen(text)-2] = '\0';
     pattern[strlen(pattern)-2] = '\0';
-    printf("%s\t%s\n", text, pattern);
 
     fclose(fp);
 }
@@ -51,19 +50,32 @@ int main(int argc, char *argv[])
     
     get_file_contents(argv);
 
-    int match_index = -1;
+    int match_count_kmp, match_count_rk;
+    match_count_kmp = 0;
+    match_count_rk = 0;
 
-    match_index = knuth_morris_pratt(text, pattern);
+    // call KMP to find match
+    match_count_kmp = knuth_morris_pratt(text, pattern);
 
-    match_index = robin_karp(text, pattern);
-
-    if (match_index == -1)
+    if (match_count_kmp == 0)
     {
-        printf("Match count not be found.\n");
+        printf("No matches found with Knuth-Morris-Pratt.\n");
     }
     else
     {
-        printf("Match occurs at index %d of the text string %s.\n", match_index, text);
+        printf("A total of %d match/es found with Knuth-Morris-Pratt.\n\n", match_count_kmp);
+    }
+
+    // call robin-karp to find match
+    match_count_rk = robin_karp(text, pattern);
+
+    if (match_count_rk == 0)
+    {
+        printf("No matches found with Robin_Karp.\n");
+    }
+    else
+    {
+        printf("A total of %d match/es found with Robin_Karp.\n\n", match_count_rk);
     }
 
     free(text);

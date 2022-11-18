@@ -1,12 +1,16 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <limits.h>
 #include "utils.h"
 
+#define MAX_CHARS 256
+
+// knuth_morris _pratt helper fnction: returns prefix array for a given string
 int* get_prefix_array(char* pattern)
 {
     // allocate space for prefix array
-    int* pfx_arr;
+    int *pfx_arr;
     pfx_arr = malloc(sizeof(int)*strlen(pattern));
 
     // set first value to 0
@@ -27,15 +31,14 @@ int* get_prefix_array(char* pattern)
 
 int knuth_morris_pratt(char* text, char* pattern)
 {
-    int* pfx_arr, n, m;
+    int *pfx_arr, n, m;
     n = strlen(text);
     m = strlen(pattern);
 
     pfx_arr = get_prefix_array(pattern);
 
-    int count, shift, i;
+    int count, i;
     count = 0;
-    shift = -1;
     for (i = 0; i < n; i++)
     {
         while ( (count > 0) && (pattern[count] != text[i]))
@@ -44,41 +47,74 @@ int knuth_morris_pratt(char* text, char* pattern)
             count = count + 1;
         if (count == m)
         {
-            shift = i - m + 1;
-            break;
+            printf("Match found at index %d.\n", (i - m + 1));
+            count = pfx_arr[count];
         }
     }
-    return shift;
+
+    free(pfx_arr);
+    return count;
 }
 
-float* get_decimal_array(char* str)
+int check_pattern_match(int idx, char* text, char* pattern)
 {
-    float* dec_arr;
-    dec_arr = malloc(sizeof(float)*strlen(str));
-
     int i;
-    char ch;
-    for (i = 0; i < strlen(str); i++)
+    int count = 0;
+    for (i = 0; i < strlen(pattern); i++)
     {
-        ch = str[i];
-        dec_arr[i] = (float)((int)ch) - 65;
+        if (text[i+idx] == pattern[i])
+            count = count + 1;
+        else
+            break;
     }
-    return dec_arr;
+    if (count == strlen(pattern))
+    {
+        printf("Match found at index %d.\n", idx);
+        return 1;
+    }
+    return 0;
 }
 
 int robin_karp(char* text, char* pattern)
 {
-    int n,m;
+    int i, j, n, m, p_hash, t_hash, q, h, match_count;
+
+    q = INT_MAX;
+    h = 1;
+    p_hash = 0;
+    t_hash = 0;
+    match_count = 0;
     n = strlen(text);
     m = strlen(pattern);
-    
-    d_text = get_decimal_array(text);
-    d_pattern = get_decimal_array(pattern);
 
-    int i;
-    for (i = 0; i < n; i++)
-    {
-        printf("%f ", d_text[i]);
+    // calculate the value of h for the pattern
+    for (i = 0; i < (m - 1); i++)
+        h = (h * MAX_CHARS) % q;
+
+    // calculate hash value for pattern
+    for (i = 0; i < m; i++) {
+        p_hash = (MAX_CHARS * p_hash + pattern[i]) % q;
+        t_hash = (MAX_CHARS * t_hash + text[i]) % q;
     }
-    return -1;
+    
+    // calculate hash values and compare for remaining text
+    for (i = 0; i <= (n - m); i++)
+    {
+        // if hash values are same check for pattern matching
+        if (p_hash == t_hash)
+        {
+            // returns 1 if pattern matches and 0 if not
+            match_count = match_count + check_pattern_match(i, text, pattern);
+        }
+
+        // calculate hash value by removing leading digit and adding trailing digit
+        if (i < n-m )
+        {
+            t_hash = (MAX_CHARS * (t_hash - (text[i] * h)) + text[i + m]) % q;
+            if (t_hash < 0)
+                t_hash = t_hash + q;
+        }
+
+    }
+    return match_count;
 }
