@@ -46,11 +46,6 @@ void get_file_contents(char* argv[])
 }
 
 
-int robin_karp()
-{
-    return -1;
-}
-
 int main(int argc, char *argv[])
 {
     
@@ -59,6 +54,9 @@ int main(int argc, char *argv[])
     int match_index = -1;
 
     match_index = knuth_morris_pratt(text, pattern);
+
+    match_index = robin_karp(text, pattern);
+
     if (match_index == -1)
     {
         printf("Match count not be found.\n");
