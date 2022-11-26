@@ -9,75 +9,118 @@
 char* text = NULL;
 char* pattern = NULL;
 
-void get_file_contents(char* argv[])
+void read_file(char *argv[])
 {
     
-    char filename[100];
+    char text_filename[100];
+    char pattern_filename[100];
     char mode[] = "r";
+    struct stat st1;
+    struct stat st2;
 
     // get filename and desired string matching algorithm from command line
-    strcpy(filename, *(argv + 1));
+    strcpy(text_filename, *(argv + 1));
+    strcpy(pattern_filename, *(argv + 2));
 
-    FILE *fp = fopen(filename, mode);
+    FILE *fp1 = fopen(text_filename, mode);
 
-    if (fp == NULL)
+    if (fp1 == NULL)
     {
-        printf("file %s cannot be opened or does not exist.\n", filename);
+        printf("%s cannot be opened or does not exist.\n", text_filename);
         exit(0);
     }
 
     // get file size to alloate memory for text and pattern strings
-    struct stat st;
-    stat(filename, &st);
-    long int f_size = st.st_size;
+    stat(text_filename, &st1);
+    long int f_size = st1.st_size;
 
     text = malloc(sizeof(char)*f_size);
-    pattern = malloc(sizeof(char)*f_size);
 
-    fgets(text, f_size, fp);
-    fgets(pattern, f_size, fp);
-
+    fgets(text, f_size, fp1);
     // replace trailing '\n' with '\0'
     text[strlen(text)-2] = '\0';
+
+    printf("%s has a length of %d.\n", text, (int)strlen(text));
+
+    fclose(fp1);
+
+    // read pattern file
+
+    FILE *fp2 = fopen(pattern_filename, mode);
+
+    if (fp2 == NULL)
+    {
+        printf("%s cannot be opened or does not exist.\n", pattern_filename);
+        exit(0);
+    }
+
+    stat(pattern_filename, &st2);
+    long int p_size = st2.st_size;
+
+    pattern = malloc(sizeof(char)*p_size);
+
+    fgets(pattern, p_size, fp2);
     pattern[strlen(pattern)-2] = '\0';
 
-    fclose(fp);
+    printf("%s has a length of %d.\n", pattern, (int)strlen(pattern));
+
+    fclose(fp2);
 }
 
 
 int main(int argc, char *argv[])
 {
     
-    get_file_contents(argv);
+    read_file(argv);
 
-    int match_count_kmp, match_count_rk;
-    match_count_kmp = 0;
-    match_count_rk = 0;
+    int match_count;
+    double run_time = 0.0;
+    clock_t start, end;
+    match_count = 0;
 
-    // call KMP to find match
-    match_count_kmp = knuth_morris_pratt(text, pattern);
+    char algorithm[100];
 
-    if (match_count_kmp == 0)
+    if (atoi(argv[3]) == 0)
     {
-        printf("No matches found with Knuth-Morris-Pratt.\n");
+        strcpy(algorithm, "Naive String Matching");
+
+        // call KMP to find match
+        start = clock();
+        match_count = naive_string_matcher(text, pattern);
+        end = clock();
+    }
+    else if (atoi(argv[3]) == 1)
+    {
+        strcpy(algorithm, "Knuth-Morris-Pratt");
+
+        // call KMP to find match
+        start = clock();
+        match_count = KMP_matcher(text, pattern);
+        end = clock();
     }
     else
     {
-        printf("A total of %d match/es found with Knuth-Morris-Pratt.\n\n", match_count_kmp);
+        strcpy(algorithm, "Robin-Karp");
+
+        // call robin-karp to find match
+        start = clock();
+        match_count = rabin_karp_matcher(text, pattern);
+        end = clock();
     }
+    
 
-    // call robin-karp to find match
-    match_count_rk = robin_karp(text, pattern);
-
-    if (match_count_rk == 0)
+    if (match_count == 0)
     {
-        printf("No matches found with Robin_Karp.\n");
+        printf("No matches found with %s.\n", algorithm);
     }
     else
     {
-        printf("A total of %d match/es found with Robin_Karp.\n\n", match_count_rk);
+        printf("A total of %d match/es found with %s.\n\n", match_count, algorithm);
     }
 
+    run_time = (double)(end - start)/CLOCKS_PER_SEC;
+    printf("CPU Time elapsed: %f seconds.\n", run_time);
+    
     free(text);
     free(pattern);
 

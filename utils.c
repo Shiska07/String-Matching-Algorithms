@@ -6,8 +6,35 @@
 
 #define MAX_CHARS 256
 
+// The naive string matching algorithm
+int naive_string_matcher(char *text, char *pattern)
+{
+    int n, m, i, j, count, match_count;
+    match_count = 0;
+    n = strlen(text);
+    m = strlen(pattern);
+    for (i = 0; i < (n - m); i++)
+    {
+        j = 0;
+        count = 0;
+        while (text[i+j] == pattern[j])  // characters match
+        {
+            count = count + 1;
+            j = j + 1;
+            if (count == m)
+            {
+                match_count = match_count + 1;
+                printf("Match found at index %d.\n", i);
+                break;
+            }
+        }
+    }
+    return match_count;
+}
+
 // knuth_morris _pratt helper fnction: returns prefix array for a given string
-int* get_prefix_array(char* pattern)
+// Running time: O(m)
+int* compute_prefix_function(char *pattern, int m)
 {
     // allocate space for prefix array
     int *pfx_arr;
@@ -18,10 +45,10 @@ int* get_prefix_array(char* pattern)
 
     int k, i;
     k = 0;
-    for (i = 1; i < strlen(pattern); i++)
+    for (i = 1; i < m; i++)
     {
         while ( (k > 0) && (pattern[k] != pattern[i]) )
-            k = pfx_arr[k];
+            k = pfx_arr[k-1];
         if (pattern[k] == pattern[i])
             k = k + 1;
         pfx_arr[i] = k;
@@ -29,34 +56,37 @@ int* get_prefix_array(char* pattern)
     return pfx_arr;
 }
 
-int knuth_morris_pratt(char* text, char* pattern)
+int KMP_matcher(char *text, char *pattern)
 {
     int *pfx_arr, n, m;
     n = strlen(text);
     m = strlen(pattern);
 
-    pfx_arr = get_prefix_array(pattern);
+    pfx_arr = compute_prefix_function(pattern, m);
 
-    int count, i;
+    int count, match_count, i;
     count = 0;
+    match_count = 0;
+
     for (i = 0; i < n; i++)
     {
         while ( (count > 0) && (pattern[count] != text[i]))
-            count = pfx_arr[count];
+            count = pfx_arr[count-1];
         if (pattern[count] == text[i])
             count = count + 1;
         if (count == m)
         {
             printf("Match found at index %d.\n", (i - m + 1));
-            count = pfx_arr[count];
+            match_count = match_count + 1;
+            count = pfx_arr[count-1];
         }
     }
 
     free(pfx_arr);
-    return count;
+    return match_count;
 }
 
-int check_pattern_match(int idx, char* text, char* pattern)
+int check_pattern_match(int idx, char *text, char *pattern)
 {
     int i;
     int count = 0;
@@ -75,7 +105,7 @@ int check_pattern_match(int idx, char* text, char* pattern)
     return 0;
 }
 
-int robin_karp(char* text, char* pattern)
+int rabin_karp_matcher(char *text, char *pattern)
 {
     int i, j, n, m, p_hash, t_hash, q, h, match_count;
 
